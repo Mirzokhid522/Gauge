@@ -95,6 +95,8 @@
 
     <script>
         let currentScore = 0;
+        let currentAngle = Math.PI; // Persistent global angle so it tracks smoothly across refreshes
+        let animationFrameId = null;
 
         function renderGauge(score, needleAngleTarget) {
             const canvas = document.getElementById('gaugeCanvas');
@@ -120,14 +122,14 @@
             ctx.fillStyle = '#ffffff';
             ctx.fill();
 
-            // 1. Draw Red Zone (Bearish tiers: Score < -0.06 and Score < -0.3)
+            // 1. Draw Red Zone
             ctx.beginPath();
             ctx.arc(cx, cy, radius, Math.PI, Math.PI + 1.22);
             ctx.lineWidth = thickness;
             ctx.strokeStyle = '#e05353';
             ctx.stroke();
 
-            // 2. Draw Blue Zone (Bullish tiers: Score > 0.06 and Score > 0.3)
+            // 2. Draw Blue Zone
             ctx.beginPath();
             ctx.arc(cx, cy, radius, Math.PI + 1.92, 2 * Math.PI);
             ctx.lineWidth = thickness;
@@ -200,7 +202,7 @@
             ctx.fill();
         }
 
-        // --- Interactivity: Mouse Hover Tooltips matching your tiers ---
+        // --- Interactivity: Mouse Hover Tooltips ---
         const canvas = document.getElementById('gaugeCanvas');
         const tooltip = document.getElementById('tooltip');
 
@@ -253,18 +255,19 @@
                 let normalized = (clampedScore - minVal) / (maxVal - minVal);
                 const targetAngle = Math.PI + (normalized * Math.PI);
 
-                // Smooth animation loop for needle
-                let currentAngle = Math.PI;
+                // Smooth animation loop continuing from currentAngle
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
                 function animate() {
                     currentAngle += (targetAngle - currentAngle) * 0.1;
                     renderGauge(score, currentAngle);
                     if (Math.abs(targetAngle - currentAngle) > 0.001) {
-                        requestAnimationFrame(animate);
+                        animationFrameId = requestAnimationFrame(animate);
                     }
                 }
                 animate();
 
-                // Update text and colors matching your exact ifs criteria
+                // Update text and header banner colors
                 const headerEl = document.getElementById('headerTitle');
                 const statusEl = document.getElementById('statusText');
                 
