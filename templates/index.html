@@ -96,6 +96,7 @@
 
     <script>
         let currentScore = 0;
+        let globalAngle = Math.PI; // Persistent state variable declared globally
         let animationFrameId = null;
 
         function renderGauge(score, needleAngleTarget) {
@@ -256,13 +257,13 @@
 
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
-                // FORCE POINTER RESET: Start animation from extreme left baseline (Math.PI) on every update
-                let currentAngle = Math.PI;
+                // HARD RESET: Immediately jump the tracking angle back to the extreme left baseline (Math.PI) before animating up to target
+                globalAngle = Math.PI;
 
                 function animate() {
-                    currentAngle += (targetAngle - currentAngle) * 0.15;
-                    renderGauge(score, currentAngle);
-                    if (Math.abs(targetAngle - currentAngle) > 0.001) {
+                    globalAngle += (targetAngle - globalAngle) * 0.15;
+                    renderGauge(score, globalAngle);
+                    if (Math.abs(targetAngle - globalAngle) > 0.001) {
                         animationFrameId = requestAnimationFrame(animate);
                     }
                 }
