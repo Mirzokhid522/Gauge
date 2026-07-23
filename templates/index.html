@@ -6,7 +6,7 @@
     <title>USD Macro Sentiment Gauge</title>
     <style>
         body {
-            background-color: #191919;
+            background-color: transparent;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
@@ -293,7 +293,11 @@
             }
         }
 
+        // Initial load
         loadLiveGauge();
+
+        // Auto-refresh every 5 seconds
+        setInterval(loadLiveGauge, 5000);
     </script>
 </body>
 </html>
