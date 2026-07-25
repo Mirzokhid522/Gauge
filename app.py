@@ -1,14 +1,20 @@
 import os
+import requests
 from flask import Flask, jsonify, render_template
-from notion_client import Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-# Load credentials securely from environment variables
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
 DATABASE_ID = os.getenv("DATABASE_ID")
 
-notion = Client(auth=NOTION_TOKEN)
+HEADERS = {
+    "Authorization": f"Bearer {NOTION_TOKEN}",
+    "Content-Type": "application/json",
+    "Notion-Version": "2022-06-28"
+}
 
 @app.route('/')
 def index():
@@ -17,41 +23,40 @@ def index():
 @app.route('/api/score', methods=['GET'])
 def get_macro_score():
     try:
-        # Query your live Notion database
-        response = notion.databases.query(
-            database_id=DATABASE_ID
-        )
+        url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
+        response = requests.post(url, headers=HEADERS, timeout=5)
         
-        results = response.get("results", [])
+        if response.status_code != 200:
+            print(f"Notion API Error: {response.status_code} - {response.text}")
+            return jsonify({"error": f"Notion API error {response.status_code}", "score": 0.0, "status": "Error"}), 500
+
+        data = response.json()
+        results = data.get("results", [])
+        
         total_score = 0.0
         count = 0
-        
+
         for page in results:
             props = page.get("properties", {})
-            
-            # Target the exact column header "Score" from your database
             score_prop = props.get("Score", {})
-            prop_type = score_prop.get("type")
-            val = None
+            p_type = score_prop.get("type")
             
-            # Handle Number properties
-            if prop_type == "number":
+            val = None
+            # Extract score based on property type
+            if p_type == "rollup":
+                val = score_prop.get("rollup", {}).get("number")
+            elif p_type == "number":
                 val = score_prop.get("number")
-                
-            # Handle Formula outputs (if your column is a formula)
-            elif prop_type == "formula":
-                formula_data = score_prop.get("formula", {})
-                if formula_data.get("type") == "number":
-                    val = formula_data.get("number")
+            elif p_type == "formula":
+                val = score_prop.get("formula", {}).get("number")
 
             if val is not None:
                 total_score += float(val)
                 count += 1
 
-        # Use the live aggregated score, or fall back if empty
-        score = total_score if count > 0 else -0.0835
-        
-        # Apply your exact scoring tiers and status logic
+        score = round(total_score, 4) if count > 0 else 0.0
+
+        # Determine directional bias
         if score > 0.3:
             status = "Very Bullish USD"
         elif score > 0.05:
@@ -63,11 +68,14 @@ def get_macro_score():
         else:
             status = "Neutral USD"
 
-        return jsonify({"score": float(score), "status": status})
+        return jsonify({
+            "score": score,
+            "status": status
+        })
 
     except Exception as e:
-        print(f"Error fetching live data from Notion: {e}")
-        return jsonify({"error": str(e), "score": -0.0835, "status": "Bearish USD"}), 500
+        print(f"Server Error: {e}")
+        return jsonify({"error": str(e), "score": 0.0, "status": "Error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
