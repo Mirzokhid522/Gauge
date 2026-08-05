@@ -35,14 +35,16 @@ def get_macro_score():
         
         total_score = 0.0
         count = 0
+        bias_statuses = []
 
         for page in results:
             props = page.get("properties", {})
+            
+            # 1. Fetch and parse Score
             score_prop = props.get("Score", {})
             p_type = score_prop.get("type")
             
             val = None
-            # Extract score based on property type
             if p_type == "rollup":
                 val = score_prop.get("rollup", {}).get("number")
             elif p_type == "number":
@@ -54,19 +56,32 @@ def get_macro_score():
                 total_score += float(val)
                 count += 1
 
-        score = round(total_score, 4) if count > 0 else 0.0
+            # 2. Fetch and parse Bias
+            bias_prop = props.get("Bias", {})
+            b_type = bias_prop.get("type")
+            
+            bias_val = None
+            if b_type == "formula":
+                formula_data = bias_prop.get("formula", {})
+                f_sub_type = formula_data.get("type")
+                bias_val = formula_data.get(f_sub_type)
+            elif b_type == "select":
+                select_data = bias_prop.get("select")
+                if select_data:
+                    bias_val = select_data.get("name")
+            elif b_type == "rich_text":
+                texts = bias_prop.get("rich_text", [])
+                bias_val = texts[0]["plain_text"] if texts else None
+            elif b_type == "string":
+                bias_val = bias_prop.get("string")
 
-        # Determine directional bias
-        if score > 0.3:
-            status = "Very Bullish USD"
-        elif score > 0.05:
-            status = "Bullish USD"
-        elif score < -0.3:
-            status = "Very Bearish USD"
-        elif score < -0.05:
-            status = "Bearish USD"
-        else:
-            status = "Neutral USD"
+            if bias_val is not None:
+                bias_statuses.append(str(bias_val))
+
+        score = round(total_score, 4) if count > 0 else 0.0
+        
+        # Strictly use the fetched Notion Bias, or default to "Unknown" if not found
+        status = bias_statuses[0] if bias_statuses else "Unknown"
 
         return jsonify({
             "score": score,
