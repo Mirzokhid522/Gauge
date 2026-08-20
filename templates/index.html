@@ -54,6 +54,7 @@
             cursor: pointer;
         }
 
+        /* Real score on top */
         #statusText {
             font-size: 26px;
             font-weight: bold;
@@ -62,11 +63,13 @@
             letter-spacing: 0.5px;
         }
 
+        /* Percentage styled identically to match score, fixed to solid white */
         #percentText {
-            font-size: 14px;
-            color: #888888;
+            font-size: 26px;
+            font-weight: bold;
+            color: #ffffff;
             margin-top: 4px;
-            font-weight: 500;
+            letter-spacing: 0.5px;
         }
 
         /* Interactive Hover Tooltip */
@@ -98,7 +101,6 @@
             <div id="tooltip">Hover over dial zones</div>
         </div>
 
-        <!-- Real value is placed above, percentage below -->
         <div id="statusText">--</div>
         <div id="percentText">--</div>
     </div>
@@ -285,12 +287,13 @@
                 // Real score value on top
                 statusEl.innerText = score.toFixed(4);
                 
-                // Percentage value directly below it
+                // Percentage conversion below it, solid white
                 let percentage = normalized * 100;
-                percentEl.innerText = `${percentage.toFixed(1)}% Sentiment Strength`;
+                percentEl.innerText = `${percentage.toFixed(0)}%`;
 
                 headerEl.innerText = notionStatus;
 
+                // Sync header background color
                 if (notionStatus.includes("Bullish")) {
                     headerEl.style.backgroundColor = "#2f65d8";
                 } else if (notionStatus.includes("Bearish")) {
