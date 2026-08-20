@@ -63,15 +63,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Percentage styled identically to match score, fixed to solid white */
-        #percentText {
-            font-size: 26px;
-            font-weight: bold;
-            color: #ffffff;
-            margin-top: 4px;
-            letter-spacing: 0.5px;
-        }
-
         /* Interactive Hover Tooltip */
         #tooltip {
             position: absolute;
@@ -102,7 +93,6 @@
         </div>
 
         <div id="statusText">--</div>
-        <div id="percentText">--</div>
     </div>
 
     <script>
@@ -282,16 +272,15 @@
 
                 const headerEl = document.getElementById('headerTitle');
                 const statusEl = document.getElementById('statusText');
-                const percentEl = document.getElementById('percentText');
                 
-                // Real score value on top
+                // Real score value on bottom container
                 statusEl.innerText = score.toFixed(4);
                 
-                // Percentage conversion below it, solid white
+                // Percentage calculation
                 let percentage = normalized * 100;
-                percentEl.innerText = `${percentage.toFixed(0)}%`;
 
-                headerEl.innerText = notionStatus;
+                // Combine status text and percentage right beside each other in the header
+                headerEl.innerText = `${notionStatus} (${percentage.toFixed(0)}%)`;
 
                 // Sync header background color
                 if (notionStatus.includes("Bullish")) {
@@ -304,7 +293,7 @@
 
             } catch (error) {
                 console.error('Error fetching score:', error);
-                document.getElementById('statusText').innerText = 'Error';
+                document.getElementById('headerTitle').innerText = 'Error Loading';
             }
         }
 
