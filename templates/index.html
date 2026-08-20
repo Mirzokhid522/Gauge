@@ -62,6 +62,13 @@
             letter-spacing: 0.5px;
         }
 
+        #percentText {
+            font-size: 14px;
+            color: #888888;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
         /* Interactive Hover Tooltip */
         #tooltip {
             position: absolute;
@@ -91,12 +98,14 @@
             <div id="tooltip">Hover over dial zones</div>
         </div>
 
+        <!-- Real value is placed above, percentage below -->
         <div id="statusText">--</div>
+        <div id="percentText">--</div>
     </div>
 
     <script>
         let currentScore = 0;
-        let globalAngle = Math.PI; // Persistent state variable declared globally
+        let globalAngle = Math.PI; 
         let animationFrameId = null;
 
         function renderGauge(score, needleAngleTarget) {
@@ -222,7 +231,6 @@
 
                 tooltip.style.opacity = '1';
                 
-                // Updated tooltips matching the 0.5 / 0.1 threshold scheme
                 if (angle >= Math.PI && angle < Math.PI + 1.22) {
                     tooltip.innerText = "Very Bearish USD (Score < -0.5)";
                 } else if (angle >= Math.PI + 1.22 && angle < Math.PI + 1.48) {
@@ -248,18 +256,17 @@
                 const response = await fetch('/api/score');
                 const data = await response.json();
                 const score = data.score; 
-                const notionStatus = data.status; // Fetches the live formatted string from Notion
+                const notionStatus = data.status; 
                 currentScore = score;
 
-                const minVal = -0.5;
-                const maxVal = 0.5;
+                const minVal = -0.6;
+                const maxVal = 0.6;
                 let clampedScore = Math.max(minVal, Math.min(maxVal, score));
                 let normalized = (clampedScore - minVal) / (maxVal - minVal);
                 const targetAngle = Math.PI + (normalized * Math.PI);
 
                 if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
-                // HARD RESET: Immediately jump the tracking angle back to the extreme left baseline (Math.PI) before animating up to target
                 globalAngle = Math.PI;
 
                 function animate() {
@@ -273,14 +280,17 @@
 
                 const headerEl = document.getElementById('headerTitle');
                 const statusEl = document.getElementById('statusText');
+                const percentEl = document.getElementById('percentText');
                 
-                // Display the score number at the bottom text field
+                // Real score value on top
                 statusEl.innerText = score.toFixed(4);
+                
+                // Percentage value directly below it
+                let percentage = normalized * 100;
+                percentEl.innerText = `${percentage.toFixed(1)}% Sentiment Strength`;
 
-                // Directly assign the text string pulled straight from your Notion Database 'Bias' property
                 headerEl.innerText = notionStatus;
 
-                // Dynamically adjust header background color based on the text content
                 if (notionStatus.includes("Bullish")) {
                     headerEl.style.backgroundColor = "#2f65d8";
                 } else if (notionStatus.includes("Bearish")) {
